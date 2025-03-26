@@ -5,6 +5,7 @@ env = gym.make("MountainCar-v0", render_mode="human")
 initial = env.reset()
 print(f"Initial: {initial}")
 
+# hyperparameters
 learning_rate = 0.1
 discount = 0.95
 episodes = 25_000
@@ -17,7 +18,7 @@ print(discrete_os_size)
 print(discrete_os_win_size)
 
 q_table = np.random.uniform(low=-2, high=0, size=(discrete_os_size + [env.action_space.n]))
-# print(f"Q-table:\n {q_table}")
+
 print(f"Observation low: {env.observation_space.low}")
 print(f"Observation high: {env.observation_space.high}")
 
@@ -33,16 +34,19 @@ for episode in range(episodes):
         render = False
     discrete_state = get_discrete_state(np.array(env.reset()[0], dtype=object))
     done = False
+
     while not done:
         action = np.argmax(q_table[discrete_state])
         new_state, reward, done, truncate, info = env.step(action)
         print(f"New state: {new_state}")
         new_discrete_state = get_discrete_state(new_state)
-        # make new discrete state positive
+
         print(f"New discrete state: {new_discrete_state}")
         env.render()
+
         done = done or truncate
-        print(reward, new_state)
+        print(f"Reward: {reward}")
+
         if render:
             env.render()
         if not done:
@@ -54,7 +58,6 @@ for episode in range(episodes):
             q_table[discrete_state + (action, )] = 0
 
         discrete_state = new_discrete_state
-
-
+        
 env.close()
 
