@@ -42,7 +42,6 @@ for episode in range(episodes):
         new_discrete_state = get_discrete_state(new_state)
 
         print(f"New discrete state: {new_discrete_state}")
-        env.render()
 
         done = done or truncate
         print(f"Reward: {reward}")
