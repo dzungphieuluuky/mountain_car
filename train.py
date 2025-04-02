@@ -1,6 +1,7 @@
-import gym
+import gymnasium as gym
 import numpy as np
 import matplotlib.pyplot as plt
+from utils import get_discrete_state
 
 # hyperparameters
 learning_rate = 0.1
@@ -9,31 +10,28 @@ epsilon_start = 1
 epsilon_end = 0.01
 epsilon_decay = (epsilon_start - epsilon_end)
 episodes = 100_000
+max_reward = -120
+results = []
 
-def get_discrete_state(state, env, discrete_os_win_size):
-    discrete_state = (state - env.observation_space.low) / discrete_os_win_size
-    return tuple(discrete_state.astype(int))
-
-
-def training(episodes):
-    env = gym.make("MountainCar-v0", render_mode="human")
-    discrete_os_size = [20] * len(env.observation_space.high)
-    discrete_os_win_size = (env.observation_space.high - env.observation_space.low) / discrete_os_size
-    # q_table = np.random.uniform(low=-2, high=0, size=(discrete_os_size + [env.action_space.n]))
-    q_table = np.load("q_table.npy")
+def training():
+    env = gym.make("MountainCar-v0")
+    _, discrete_os_size = get_discrete_state(np.array(env.reset()[0], dtype=object), env)
+    q_table = np.random.uniform(low=-2, high=0, size=(discrete_os_size + [env.action_space.n]))
     eps_rewards = []
     episode_store = []
-    for episode in range(episodes):
+    episode = 1
+
+    while True:
         episode_store.append(episode)
         episode_reward = 0
-        discrete_state = get_discrete_state(np.array(env.reset()[0], dtype=object), env, discrete_os_win_size)
+        discrete_state, _ = get_discrete_state(np.array(env.reset()[0], dtype=object), env)
         done = False
         print(f"Episode: {episode}")
 
         while not done:
             action = np.argmax(q_table[discrete_state])
             new_state, reward, done, truncate, info = env.step(action)
-            new_discrete_state = get_discrete_state(new_state, env, discrete_os_win_size)
+            new_discrete_state, _ = get_discrete_state(new_state, env)
 
             if done or truncate:
                 break
@@ -53,8 +51,15 @@ def training(episodes):
 
         eps_rewards.append(episode_reward)
         print(f"Episode reward: {episode_reward}")
+        episode += 1
+        if episode_reward >= max_reward:
+            print("Training successfully!")
+            break
     env.close()
-    np.save("q_table.npy", q_table)
+    np.save("model/q_table.npy", q_table)
+    results.append(episode_store)
+    results.append(eps_rewards)
+    np.save('results.npy', results)
 
-
-training(episodes)
+if __name__ == "__main__":
+    training()
